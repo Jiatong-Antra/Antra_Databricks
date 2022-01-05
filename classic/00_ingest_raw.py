@@ -64,7 +64,7 @@
 
 # COMMAND ----------
 
-dbutils.fs.rm(classicPipelinePath, recurse=True)
+# dbutils.fs.rm(classicPipelinePathMovie, recurse=True)
 
 # COMMAND ----------
 
@@ -75,7 +75,7 @@ dbutils.fs.rm(classicPipelinePath, recurse=True)
 
 # COMMAND ----------
 
-prepare_activity_data(landingPath)
+# prepare_activity_data(landingPathMovie)
 
 # COMMAND ----------
 
@@ -135,7 +135,7 @@ display(dbutils.fs.ls(rawPathMovie))
 
 print(
     dbutils.fs.head(
-        dbutils.fs.ls("dbfs:/dbacademy/jiatong_li/dataengineering/classic/raw/")[0].path
+        dbutils.fs.ls(rawPathMovie)[0].path
     )
 )
 
@@ -145,7 +145,7 @@ print(
 # TODO
 print(
   dbutils.fs.head(
-    dbutils.fs.ls('dbfs:/dbacademy/jiatong_li/dataengineering/classic/raw/')[1].path
+    dbutils.fs.ls(rawPathMovie)[1].path
   )
 )
 
