@@ -20,6 +20,14 @@ silverPath = classicPipelinePath + "silver/"
 silverQuarantinePath = classicPipelinePath + "silverQuarantine/"
 goldPath = classicPipelinePath + "gold/"
 
+classicPipelinePathMovie = f"/FileStore/"
+landingPathMovie = classicPipelinePathMovie + "landing/"
+rawPathMovie = classicPipelinePathMovie + "raw/"
+bronzePathMovie = classicPipelinePathMovie + "bronze/"
+silverPathMovie = classicPipelinePathMovie + "silver/"
+silverQuarantinePathMovie = classicPipelinePathMovie + "silverQuarantine/"
+goldPathMovie = classicPipelinePathMovie + "gold/"
+
 # COMMAND ----------
 
 # MAGIC %md

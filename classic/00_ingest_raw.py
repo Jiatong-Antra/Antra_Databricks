@@ -101,7 +101,7 @@ ingest_classic_data()
 
 # COMMAND ----------
 
-display(dbutils.fs.ls(rawPath))
+display(dbutils.fs.ls(rawPathMovie))
 
 # COMMAND ----------
 
@@ -120,7 +120,7 @@ ingest_classic_data(hours = 5)
 
 # COMMAND ----------
 
-display(dbutils.fs.ls(rawPath))
+display(dbutils.fs.ls(rawPathMovie))
 
 # COMMAND ----------
 
