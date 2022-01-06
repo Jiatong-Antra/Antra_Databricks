@@ -37,7 +37,7 @@
 
 # COMMAND ----------
 
-display(dbutils.fs.ls(rawPath))
+display(dbutils.fs.ls(rawPathMovie))
 
 # COMMAND ----------
 
@@ -46,7 +46,7 @@ display(dbutils.fs.ls(rawPath))
 
 # COMMAND ----------
 
-dbutils.fs.rm(bronzePath, recurse=True)
+dbutils.fs.rm(bronzePathMovie, recurse=True)
 
 # COMMAND ----------
 
@@ -65,7 +65,7 @@ dbutils.fs.rm(bronzePath, recurse=True)
 kafka_schema = "value STRING"
 
 raw_health_tracker_data_df = (
-  spark.read.schema(kafka_schema).format("text").load(rawPath)
+  spark.read.schema(kafka_schema).format("text").load(rawPathMovie)
   #FILL_THIS_IN
 )
 
