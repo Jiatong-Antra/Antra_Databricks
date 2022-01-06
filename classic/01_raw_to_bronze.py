@@ -64,10 +64,21 @@ dbutils.fs.rm(bronzePathMovie, recurse=True)
 # TODO
 kafka_schema = "value STRING"
 
-raw_health_tracker_data_df = (
-  spark.read.schema(kafka_schema).format("text").load(rawPathMovie)
+
+# raw_movie_data_df = (
+  #spark.read.format("text").schema(kafka_schema).load(rawPathMovie)
   #FILL_THIS_IN
-)
+#)
+
+# COMMAND ----------
+
+from pyspark.sql.functions import *
+
+raw_movie_data_df = (spark.read
+         .option("multiline", "true")
+         .format("json")
+         .load(rawPathMovie)
+         .select(explode("movie").alias("movies")))
 
 # COMMAND ----------
 
@@ -78,7 +89,7 @@ raw_health_tracker_data_df = (
 
 # COMMAND ----------
 
-display(raw_health_tracker_data_df)
+display(raw_movie_data_df)
 
 # COMMAND ----------
 
@@ -97,11 +108,11 @@ display(raw_health_tracker_data_df)
 # COMMAND ----------
 
 # TODO
-from pyspark.sql.functions import current_timestamp, lit
+from pyspark.sql.functions import current_timestamp, lit, col
 
-raw_health_tracker_data_df = (
-  raw_health_tracker_data_df.select(
-    "value",
+raw_movie_data_df = (
+  raw_movie_data_df.select(
+    col("movies").alias("value"),
     lit("files.training.databricks.com").alias('datasource'),
     current_timestamp().alias('ingesttime'),
     lit("new").alias('status'),
@@ -109,6 +120,10 @@ raw_health_tracker_data_df = (
     #FILL_THIS_IN
   )
 )
+
+# COMMAND ----------
+
+display(raw_movie_data_df)
 
 # COMMAND ----------
 
@@ -131,7 +146,7 @@ raw_health_tracker_data_df = (
 from pyspark.sql.functions import col
 
 (
-  raw_health_tracker_data_df.select(
+  raw_movie_data_df.select(
     "datasource",
     "ingesttime",
     "value",
@@ -141,7 +156,7 @@ from pyspark.sql.functions import col
   .write.format("delta")
   .mode('append')
   .partitionBy("p_ingestdate")
-  .save(bronzePath)
+  .save(bronzePathMovie)
   
   
   #FILL_THIS_IN
@@ -149,7 +164,7 @@ from pyspark.sql.functions import col
 
 # COMMAND ----------
 
-display(dbutils.fs.ls(bronzePath))
+display(dbutils.fs.ls(bronzePathMovie))
 
 # COMMAND ----------
 
@@ -163,14 +178,14 @@ display(dbutils.fs.ls(bronzePath))
 # TODO
 spark.sql("""
 --FILL_THIS_IN
-DROP TABLE IF EXISTS health_tracker_classic_bronze
+DROP TABLE IF EXISTS movie_bronze
 """)
 
 spark.sql(f"""
 --FILL_THIS_IN
-CREATE TABLE health_tracker_classic_bronze
+CREATE TABLE movie_bronze
     USING delta
-    LOCATION "{bronzePath}"
+    LOCATION "{bronzePathMovie}"
 """)
 
 # COMMAND ----------
@@ -184,7 +199,7 @@ CREATE TABLE health_tracker_classic_bronze
 
 # MAGIC %sql
 # MAGIC 
-# MAGIC SELECT * FROM health_tracker_classic_bronze
+# MAGIC SELECT * FROM movie_bronze
 
 # COMMAND ----------
 
@@ -203,7 +218,7 @@ CREATE TABLE health_tracker_classic_bronze
 
 # MAGIC %sql
 # MAGIC 
-# MAGIC SELECT * FROM health_tracker_classic_bronze WHERE value RLIKE 'Gonzalo Valdés'
+# MAGIC -- SELECT * FROM health_tracker_classic_bronze WHERE value RLIKE 'Gonzalo Valdés'
 
 # COMMAND ----------
 
@@ -222,7 +237,7 @@ CREATE TABLE health_tracker_classic_bronze
 
 # MAGIC %sql
 # MAGIC 
-# MAGIC SELECT * FROM health_tracker_user
+# MAGIC -- SELECT * FROM health_tracker_user
 
 # COMMAND ----------
 
@@ -237,7 +252,7 @@ CREATE TABLE health_tracker_classic_bronze
 
 # COMMAND ----------
 
-dbutils.fs.rm(rawPath, recurse=True)
+dbutils.fs.rm(rawPathMovie, recurse=True)
 
 
 # COMMAND ----------
