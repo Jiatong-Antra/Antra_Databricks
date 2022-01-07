@@ -117,6 +117,47 @@ def transform_bronze(bronze: DataFrame, quarantine: bool = False) -> DataFrame:
 
 # COMMAND ----------
 
+def transform_bronze_movie(bronze: DataFrame, quarantine: bool = False) -> DataFrame:
+
+    
+    silver_movie = bronze.select("value.Id",
+                                 "value.Title",
+                                 "value.Overview",
+                                 "value.Tagline",
+                                 "value.Budget",
+                                 "value.Revenue",
+                                 "value.ImdbUrl",
+                                 "value.TmdbUrl",
+                                 "value.PosterUrl",
+                                 "value.BackdropUrl",
+                                 "value.OriginalLanguage",
+                                 "value.ReleaseDate",
+                                 "value.RunTime",
+                                 "value.Price",
+                                 "value.CreatedDate",
+                                 "value.UpdatedDate",
+                                 "value.UpdatedBy",
+                                 "value.CreatedBy",
+                                 "value.genres",
+                                 "value")
+    
+    silver_movie = silver_movie.select(col("Id").cast("integer").alias("Movie_ID"),
+                                       "Title",
+                                       col("Budget").cast("integer").alias("Budget"),
+                                       "OriginalLanguage",
+                                       col("RunTime").cast("integer").alias("RunTime"),
+                                       "genres",
+                                       "value")
+    
+    silver_movie = silver_movie.dropDuplicates()
+
+   #
+
+    return silver_movie
+
+
+# COMMAND ----------
+
 def repair_quarantined_records(
     spark: SparkSession, bronzeTable: str, userTable: str
 ) -> DataFrame:

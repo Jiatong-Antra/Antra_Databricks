@@ -52,7 +52,7 @@
 
 # COMMAND ----------
 
-display(dbutils.fs.ls(bronzePath))
+display(dbutils.fs.ls(bronzePathMovie))
 
 # COMMAND ----------
 
@@ -174,7 +174,7 @@ rawToBronzeWriter = batch_writer(
 )
 # FILL_THIS_IN
 
-rawToBronzeWriter.save(bronzePath)
+# rawToBronzeWriter.save(bronzePath)
 
 # COMMAND ----------
 
@@ -185,7 +185,7 @@ rawToBronzeWriter.save(bronzePath)
 
 # COMMAND ----------
 
-dbutils.fs.rm(rawPath, recurse=True)
+dbutils.fs.rm(rawPathMovie, recurse=True)
 
 # COMMAND ----------
 
@@ -197,7 +197,7 @@ dbutils.fs.rm(rawPath, recurse=True)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC SELECT * FROM health_tracker_classic_bronze
+# MAGIC SELECT * FROM movie_bronze
 
 # COMMAND ----------
 
@@ -213,7 +213,7 @@ dbutils.fs.rm(rawPath, recurse=True)
 
 # COMMAND ----------
 
-dbutils.fs.rm(silverPath, recurse=True)
+dbutils.fs.rm(silverPathMovie, recurse=True)
 
 # COMMAND ----------
 
@@ -227,8 +227,12 @@ dbutils.fs.rm(silverPath, recurse=True)
 # COMMAND ----------
 
 # TODO
-bronzeDF = spark.read.table("health_tracker_classic_bronze").filter("status = 'new'")
+bronzemovieDF = spark.read.table("movie_bronze").filter("status = 'new'")
 # FILL_THIS_IN
+
+# COMMAND ----------
+
+display(bronzemovieDF)
 
 # COMMAND ----------
 
@@ -246,27 +250,6 @@ bronzeDF = spark.read.table("health_tracker_classic_bronze").filter("status = 'n
 
 # COMMAND ----------
 
-# TODO
-from pyspark.sql.functions import from_json
-
-# FILL_THIS_IN
-
-json_schema = """
-    time TIMESTAMP,
-    name STRING,
-    device_id STRING,
-    steps INTEGER,
-    day INTEGER,
-    month INTEGER,
-    hour INTEGER
-"""
-
-bronzeAugmentedDF = bronzeDF.withColumn(
-        "nested_json", from_json(col("value"), json_schema)
-    )
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC ### Step 2: Create the Silver DataFrame by Unpacking the `nested_json` Column
 # MAGIC 
@@ -280,8 +263,12 @@ bronzeAugmentedDF = bronzeDF.withColumn(
 # COMMAND ----------
 
 # TODO
-silver_health_tracker = bronzeAugmentedDF.select("value", "nested_json.*")
+silver_movie = transform_bronze_movie(bronzemovieDF)
 # FILL_THIS_IN
+
+# COMMAND ----------
+
+display(silver_movie)
 
 # COMMAND ----------
 
@@ -305,21 +292,21 @@ silver_health_tracker = bronzeAugmentedDF.select("value", "nested_json.*")
 
 # COMMAND ----------
 
-from pyspark.sql.types import _parse_datatype_string
+#from pyspark.sql.types import _parse_datatype_string
 
-assert silver_health_tracker.schema == _parse_datatype_string(
-    """
-  value STRING,
-  time TIMESTAMP,
-  name STRING,
-  device_id STRING,
-  steps INTEGER,
-  day INTEGER,
-  month INTEGER,
-  hour INTEGER
-"""
-)
-print("Assertion passed.")
+#assert silver_health_tracker.schema == _parse_datatype_string(
+ #   """
+ # value STRING,
+ # time TIMESTAMP,
+ # name STRING,
+ # device_id STRING,
+  #steps INTEGER,
+ # day INTEGER,
+ # month INTEGER,
+ # hour INTEGER
+#"""
+#)
+#print("Assertion passed.")
 
 # COMMAND ----------
 
@@ -346,20 +333,20 @@ print("Assertion passed.")
 # COMMAND ----------
 
 # TODO
-from pyspark.sql.functions import col
+#from pyspark.sql.functions import col
 
 # FILL_THIS_IN
 
-silver_health_tracker = silver_health_tracker.select(
-  'value',
-  col('device_id').cast('integer').alias('device_id'),
-  'steps',
-  col('time').alias('eventtime'),
-  'name',
-  col('time').cast('date').alias('p_eventdate')
+#silver_health_tracker = silver_health_tracker.select(
+  #'value',
+  #col('device_id').cast('integer').alias('device_id'),
+  #'steps',
+  #col('time').alias('eventtime'),
+  #'name',
+ # col('time').cast('date').alias('p_eventdate')
   
     # FILL_THIS_IN
-)
+#)
 
 # COMMAND ----------
 
@@ -380,19 +367,19 @@ silver_health_tracker = silver_health_tracker.select(
 
 # COMMAND ----------
 
-from pyspark.sql.types import _parse_datatype_string
+#from pyspark.sql.types import _parse_datatype_string
 
-assert silver_health_tracker.schema == _parse_datatype_string(
-    """
-  value STRING,
-  device_id INTEGER,
-  steps INTEGER,
-  eventtime TIMESTAMP,
-  name STRING,
-  p_eventdate DATE
-"""
-), "Schemas do not match"
-print("Assertion passed.")
+#assert silver_health_tracker.schema == _parse_datatype_string(
+#  """
+ # value STRING,
+ # device_id INTEGER,
+ # steps INTEGER,
+ # eventtime TIMESTAMP,
+ # name STRING,
+ # p_eventdate DATE
+#"""
+#), "Schemas do not match"
+#print("Assertion passed.")
 
 # COMMAND ----------
 
@@ -414,11 +401,11 @@ print("Assertion passed.")
 
 # COMMAND ----------
 
-silver_health_tracker.count()
+silver_movie.count()
 
 # COMMAND ----------
 
-silver_health_tracker.na.drop().count()
+silver_movie.na.drop().count()
 
 # COMMAND ----------
 
@@ -427,8 +414,8 @@ silver_health_tracker.na.drop().count()
 
 # COMMAND ----------
 
-silver_health_tracker_clean = silver_health_tracker.filter("device_id IS NOT NULL")
-silver_health_tracker_quarantine = silver_health_tracker.filter("device_id IS NULL")
+silver_movie_clean = silver_movie.filter("RunTime >= 0")
+silver_movie_quarantine = silver_movie.filter("RunTime < 0")
 
 # COMMAND ----------
 
@@ -437,7 +424,7 @@ silver_health_tracker_quarantine = silver_health_tracker.filter("device_id IS NU
 
 # COMMAND ----------
 
-display(silver_health_tracker_quarantine)
+display(silver_movie_quarantine)
 
 # COMMAND ----------
 
@@ -455,30 +442,38 @@ display(silver_health_tracker_quarantine)
 
 # TODO
 (
-  silver_health_tracker_clean.select(
-  'device_id', 'steps', 'eventtime', 'name', 'p_eventdate'
+  silver_movie_clean.select('Movie_ID',
+                            'Title',
+                            'Budget',
+                            'OriginalLanguage',
+                            'RunTime',
+                            'genres',
+                            'value'
   )  
   .write.format("delta")
   .mode('append')
-  .partitionBy('p_eventdate')
-  .save(silverPath)
+  .save(silverPathMovie)
 )
   # FILL_THIS_IN
 
 
 # COMMAND ----------
 
+display(dbutils.fs.ls(silverPathMovie))
+
+# COMMAND ----------
+
 spark.sql(
     """
-DROP TABLE IF EXISTS health_tracker_classic_silver
+DROP TABLE IF EXISTS movie_silver
 """
 )
 
 spark.sql(
     f"""
-CREATE TABLE health_tracker_classic_silver
+CREATE TABLE movie_silver
 USING DELTA
-LOCATION "{silverPath}"
+LOCATION "{silverPathMovie}"
 """
 )
 
@@ -489,25 +484,25 @@ LOCATION "{silverPath}"
 
 # COMMAND ----------
 
-silverTable = spark.read.table("health_tracker_classic_silver")
-expected_schema = """
-  device_id INTEGER,
-  steps INTEGER,
-  eventtime TIMESTAMP,
-  name STRING,
-  p_eventdate DATE
-"""
+#silverTable = spark.read.table("health_tracker_classic_silver")
+#expected_schema = """
+#  device_id INTEGER,
+#  steps INTEGER,
+#  eventtime TIMESTAMP,
+#  name STRING,
+#  p_eventdate DATE
+#"""
 
-assert silverTable.schema == _parse_datatype_string(
-    expected_schema
-), "Schemas do not match"
-print("Assertion passed.")
+#assert silverTable.schema == _parse_datatype_string(
+#    expected_schema
+#), "Schemas do not match"
+#print("Assertion passed.")
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC 
-# MAGIC SELECT * FROM health_tracker_classic_silver
+# MAGIC SELECT * FROM movie_silver
 
 # COMMAND ----------
 
@@ -529,9 +524,9 @@ print("Assertion passed.")
 from delta.tables import DeltaTable
 # FILL_THIS_IN
 
-bronzeTable = DeltaTable.forPath(spark, bronzePath)
-silverAugmented = (
-    silver_health_tracker_clean
+bronzeTableMovie = DeltaTable.forPath(spark, bronzePathMovie)
+silverAugmentedMovie = (
+    silver_movie_clean
     .withColumn("status", lit("loaded"))
 )
 
@@ -539,8 +534,8 @@ update_match = "bronze.value = clean.value"
 update = {"status": "clean.status"}
 
 (
-  bronzeTable.alias("bronze")
-  .merge(silverAugmented.alias("clean"), update_match)
+  bronzeTableMovie.alias("bronze")
+  .merge(silverAugmentedMovie.alias("clean"), update_match)
   .whenMatchedUpdate(set=update)
   .execute()
 )
@@ -559,8 +554,8 @@ update = {"status": "clean.status"}
 # COMMAND ----------
 
 # TODO
-silverAugmented = (
-  silver_health_tracker_quarantine
+silverAugmentedMovie = (
+  silver_movie_quarantine
   .withColumn("status", lit("quarantined"))
 )
 
@@ -568,8 +563,8 @@ update_match = "bronze.value = quarantine.value"
 update = {"status": "quarantine.status"}
 
 (
-  bronzeTable.alias("bronze")
-  .merge(silverAugmented.alias("quarantine"), update_match)
+  bronzeTableMovie.alias("bronze")
+  .merge(silverAugmentedMovie.alias("quarantine"), update_match)
   .whenMatchedUpdate(set=update)
   .execute()
 )
