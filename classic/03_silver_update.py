@@ -73,10 +73,10 @@ ingest_classic_data(hours=10)
 rawDF = read_batch_raw(rawPath)
 transformedRawDF = transform_raw(rawDF)
 rawToBronzeWriter = batch_writer(
-    dataframe=transformedRawDF, partition_column="p_ingestdate"
+    dataframe=transformedRawDF
 )
 
-rawToBronzeWriter.save(bronzePath)
+# rawToBronzeWriter.save(bronzePath)
 
 # COMMAND ----------
 
@@ -89,7 +89,7 @@ rawToBronzeWriter.save(bronzePath)
 
 # TODO
 # FILL_THIS_IN
-dbutils.fs.rm(rawPath, recurse=True)
+dbutils.fs.rm(rawPathMovie, recurse=True)
 
 # COMMAND ----------
 
@@ -125,17 +125,17 @@ dbutils.fs.rm(rawPath, recurse=True)
 
 # COMMAND ----------
 
-bronzeDF = read_batch_bronze(spark)
-transformedBronzeDF = transform_bronze(bronzeDF)
+bronzeDFMovie = read_batch_bronze(spark)
+transformedBronzeDFMovie = transform_bronze_movie(bronzeDFMovie)
 
-(silverCleanDF, silverQuarantineDF) = generate_clean_and_quarantine_dataframes(
-    transformedBronzeDF
+(silverCleanDF, silverQuarantineDF) = generate_clean_and_quarantine_dataframes_movie(
+    transformedBronzeDFMovie
 )
 
 bronzeToSilverWriter = batch_writer(
-    dataframe=silverCleanDF, partition_column="p_eventdate", exclude_columns=["value"]
+    dataframe=silverCleanDF, exclude_columns=["value"]
 )
-bronzeToSilverWriter.save(silverPath)
+bronzeToSilverWriter.save(silverPathMovie)
 
 update_bronze_table_status(spark, bronzePath, silverCleanDF, "loaded")
 update_bronze_table_status(spark, bronzePath, silverQuarantineDF, "quarantined")
@@ -148,7 +148,7 @@ update_bronze_table_status(spark, bronzePath, silverQuarantineDF, "quarantined")
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC SELECT * FROM health_tracker_classic_silver
+# MAGIC SELECT * FROM movie_silver
 
 # COMMAND ----------
 
@@ -170,7 +170,9 @@ update_bronze_table_status(spark, bronzePath, silverQuarantineDF, "quarantined")
 # COMMAND ----------
 
 # TODO
-bronzeQuarantinedDF = spark.read.table('health_tracker_classic_bronze').filter("status = 'quarantined'")
+bronzeQuarantinedDFMovie = spark.read.table('movie_bronze').filter("status = 'quarantined'")
+
+display(bronzeQuarTransDFMovie)
 
 # FILL_THIS_IN
 
@@ -183,10 +185,14 @@ bronzeQuarantinedDF = spark.read.table('health_tracker_classic_bronze').filter("
 
 # COMMAND ----------
 
-bronzeQuarTransDF = transform_bronze(bronzeQuarantinedDF, quarantine=True).alias(
+bronzeQuarTransDFMovie = transform_bronze_movie(bronzeQuarantinedDFMovie, quarantine=True).alias(
     "quarantine"
 )
-display(bronzeQuarTransDF)
+display(bronzeQuarTransDFMovie)
+
+# COMMAND ----------
+
+
 
 # COMMAND ----------
 
@@ -197,12 +203,12 @@ display(bronzeQuarTransDF)
 
 # COMMAND ----------
 
-health_tracker_user_df = spark.read.table("health_tracker_user").alias("user")
-repairDF = bronzeQuarTransDF.join(
-    health_tracker_user_df,
-    bronzeQuarTransDF.device_id == health_tracker_user_df.user_id,
-)
-display(repairDF)
+# health_tracker_user_df = spark.read.table("health_tracker_user").alias("user")
+from pyspark.sql.functions import col, abs
+
+repairDFMovie = bronzeQuarTransDFMovie.withColumn('RunTime',abs(col('RunTime').cast('integer')))
+
+display(repairDFMovie)
 
 # COMMAND ----------
 
@@ -211,15 +217,16 @@ display(repairDF)
 
 # COMMAND ----------
 
-silverCleanedDF = repairDF.select(
-    col("quarantine.value").alias("value"),
-    col("user.device_id").cast("INTEGER").alias("device_id"),
-    col("quarantine.steps").alias("steps"),
-    col("quarantine.eventtime").alias("eventtime"),
-    col("quarantine.name").alias("name"),
-    col("quarantine.eventtime").cast("date").alias("p_eventdate"),
+silverCleanedDFMovie = repairDFMovie.select(
+                            'Movie_ID',
+                            'Title',
+                            'Budget',
+                            'OriginalLanguage',
+                            'RunTime',
+                            'genres',
+                            'value'
 )
-display(silverCleanedDF)
+display(silverCleanedDFMovie)
 
 # COMMAND ----------
 
@@ -232,11 +239,33 @@ display(silverCleanedDF)
 # COMMAND ----------
 
 bronzeToSilverWriter = batch_writer(
-    dataframe=silverCleanedDF, partition_column="p_eventdate", exclude_columns=["value"]
+    dataframe=silverCleanedDFMovie, exclude_columns=["value"]
 )
-bronzeToSilverWriter.save(silverPath)
+bronzeToSilverWriter.save(silverPathMovie)
 
-update_bronze_table_status(spark, bronzePath, silverCleanedDF, "loaded")
+update_bronze_table_status(spark, bronzePathMovie, silverCleanedDFMovie, "loaded")
+
+# COMMAND ----------
+
+# TODO
+from delta.tables import DeltaTable
+# FILL_THIS_IN
+
+bronzeTableMovie = DeltaTable.forPath(spark, bronzePathMovie)
+silverAugmentedMovie = (
+    repairDFMovie
+    .withColumn("status", lit("loaded"))
+)
+
+update_match = "bronze.value = clean.value"
+update = {"status": "clean.status"}
+
+(
+  bronzeTableMovie.alias("bronze")
+  .merge(silverAugmentedMovie.alias("clean"), update_match)
+  .whenMatchedUpdate(set=update)
+  .execute()
+)
 
 # COMMAND ----------
 
@@ -248,7 +277,7 @@ update_bronze_table_status(spark, bronzePath, silverCleanedDF, "loaded")
 
 # COMMAND ----------
 
-display(bronzeQuarantinedDF)
+display(bronzeQuarantinedDFMovie)
 
 
 # COMMAND ----------

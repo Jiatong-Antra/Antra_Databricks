@@ -22,7 +22,6 @@ from pyspark.sql.window import Window
 
 def batch_writer(
     dataframe: DataFrame,
-    partition_column: str,
     exclude_columns: List = [],
     mode: str = "append",
 ) -> DataFrame:
@@ -32,7 +31,6 @@ def batch_writer(
         )  # This uses Python argument unpacking (https://docs.python.org/3/tutorial/controlflow.html#unpacking-argument-lists)
         .write.format("delta")
         .mode(mode)
-        .partitionBy(partition_column)
     )
 
 
@@ -52,6 +50,16 @@ def generate_clean_and_quarantine_dataframes(
         dataframe.filter("device_id IS NULL"),
     )
 
+
+# COMMAND ----------
+
+def generate_clean_and_quarantine_dataframes_movie(
+    dataframe: DataFrame,
+) -> (DataFrame, DataFrame):
+    return (
+        dataframe.filter("RunTime >= 0"),
+        dataframe.filter("RunTime < 0"),
+    )
 
 # COMMAND ----------
 
