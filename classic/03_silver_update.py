@@ -253,7 +253,7 @@ from delta.tables import DeltaTable
 
 bronzeTableMovie = DeltaTable.forPath(spark, bronzePathMovie)
 silverAugmentedMovie = (
-    repairDFMovie
+    silverCleanedDFMovie
     .withColumn("status", lit("loaded"))
 )
 
@@ -279,6 +279,11 @@ update = {"status": "clean.status"}
 
 display(bronzeQuarantinedDFMovie)
 
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC SELECT * FROM movie_silver
 
 # COMMAND ----------
 
