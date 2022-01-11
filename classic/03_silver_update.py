@@ -142,6 +142,14 @@ update_bronze_table_status(spark, bronzePath, silverQuarantineDF, "quarantined")
 
 # COMMAND ----------
 
+display(transformedBronzeDFMovie)
+
+# COMMAND ----------
+
+display(transformedBronzeDFMovie)
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ### Perform a Visual Verification of the Silver Table
 
@@ -172,7 +180,7 @@ update_bronze_table_status(spark, bronzePath, silverQuarantineDF, "quarantined")
 # TODO
 bronzeQuarantinedDFMovie = spark.read.table('movie_bronze').filter("status = 'quarantined'")
 
-display(bronzeQuarTransDFMovie)
+#display(bronzeQuarTransDFMovie)
 
 # FILL_THIS_IN
 
@@ -206,9 +214,13 @@ display(bronzeQuarTransDFMovie)
 # health_tracker_user_df = spark.read.table("health_tracker_user").alias("user")
 from pyspark.sql.functions import col, abs
 
-repairDFMovie = bronzeQuarTransDFMovie.withColumn('RunTime',abs(col('RunTime').cast('integer')))
+repairDFMovie = bronzeQuarTransDFMovie.withColumn('RunTime',abs(col('RunTime').cast('integer'))).withColumn('Budget', lit(1000000))
 
 display(repairDFMovie)
+
+# COMMAND ----------
+
+bronzeQuarTransDFMovie.show()
 
 # COMMAND ----------
 
@@ -244,6 +256,10 @@ bronzeToSilverWriter = batch_writer(
 bronzeToSilverWriter.save(silverPathMovie)
 
 update_bronze_table_status(spark, bronzePathMovie, silverCleanedDFMovie, "loaded")
+
+# COMMAND ----------
+
+display(silverCleanedDFMovie)
 
 # COMMAND ----------
 
@@ -284,6 +300,10 @@ display(bronzeQuarantinedDFMovie)
 
 # MAGIC %sql
 # MAGIC SELECT * FROM movie_silver
+
+# COMMAND ----------
+
+
 
 # COMMAND ----------
 

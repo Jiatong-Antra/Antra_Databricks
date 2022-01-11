@@ -57,15 +57,24 @@ def generate_clean_and_quarantine_dataframes_movie(
     dataframe: DataFrame,
 ) -> (DataFrame, DataFrame):
     return (
-        dataframe.filter("RunTime >= 0"),
-        dataframe.filter("RunTime < 0"),
+        dataframe.filter((dataframe.RunTime >= 0) & (dataframe.Budget >= 1000000)),
+        dataframe.filter((dataframe.RunTime < 0) | (dataframe.Budget < 1000000))
     )
+  
+  
+#def generate_clean_and_quarantine_dataframes_movie_budget(
+ #   dataframe: DataFrame,
+#) -> (DataFrame, DataFrame):
+ #   return (
+  #      dataframe.filter("Budget >= 1000000"),
+   #     dataframe.filter("Budget < 1000000"),
+    #)
 
 # COMMAND ----------
 
 # TODO
 def read_batch_bronze(spark = SparkSession) -> DataFrame:
-  return spark.read.table("health_tracker_classic_bronze").filter("status = 'new'")
+  return spark.read.table("movie_bronze").filter("status = 'new'")
 # FILL_THIS_IN
 
 # COMMAND ----------

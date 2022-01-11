@@ -169,7 +169,7 @@ print("Assertion passed.")
 # TODO
 rawToBronzeWriter = batch_writer(
     dataframe = transformedRawDF,
-    partition_column = 'p_ingestdate',
+    #partition_column = 'p_ingestdate',
     
 )
 # FILL_THIS_IN
@@ -414,8 +414,8 @@ silver_movie.na.drop().count()
 
 # COMMAND ----------
 
-silver_movie_clean = silver_movie.filter("RunTime >= 0")
-silver_movie_quarantine = silver_movie.filter("RunTime < 0")
+silver_movie_clean = silver_movie.filter((silver_movie.RunTime >= 0) & (silver_movie.Budget >= 1000000))
+silver_movie_quarantine = silver_movie.filter((silver_movie.RunTime < 0) | (silver_movie.Budget < 1000000))
 
 # COMMAND ----------
 
