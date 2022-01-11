@@ -1,4 +1,18 @@
 # Databricks notebook source
+# MAGIC %sql
+# MAGIC 
+# MAGIC SELECT *
+# MAGIC FROM movie_bronze
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC 
+# MAGIC SELECT *
+# MAGIC FROM movie_silver
+
+# COMMAND ----------
+
 # MAGIC %run ./includes/configuration
 
 # COMMAND ----------

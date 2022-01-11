@@ -28,6 +28,10 @@ silverPathMovie = classicPipelinePathMovie + "silver/"
 silverQuarantinePathMovie = classicPipelinePathMovie + "silverQuarantine/"
 goldPathMovie = classicPipelinePathMovie + "gold/"
 
+genressilverPathMovie = classicPipelinePathMovie + "genres/"
+originallanguagessilverPathMovie = classicPipelinePathMovie + "originallanguages/"
+
+
 # COMMAND ----------
 
 # MAGIC %md
